@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import sys
 import logging
 import re
 try:
@@ -22,10 +21,10 @@ except ImportError:
     # python 2
     from urllib import urlencode
 
-from tachyonic.neutrino.utils.general import if_unicode_to_utf8
-from tachyonic.neutrino import constants as const
-from tachyonic.neutrino import exceptions
-from tachyonic.neutrino.headers import Headers
+from tachyonic.client.utils import if_unicode_to_utf8
+from tachyonic.client import constants as const
+from tachyonic.client import exceptions
+from tachyonic.client.headers import Headers
 
 log = logging.getLogger(__name__)
 
@@ -171,7 +170,7 @@ class RestClient(object):
             curl.setopt(curl.CUSTOMREQUEST,
                         if_unicode_to_utf8('CONNECT'))
         else:
-            raise exceptions.Error("Invalid request type %s" % (method,))
+            raise exceptions.RestClientError("Invalid request type %s" % (method,))
 
         try:
             curl.perform()
