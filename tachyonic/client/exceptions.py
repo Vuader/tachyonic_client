@@ -5,13 +5,12 @@ from __future__ import unicode_literals
 
 import logging
 
-from tachyonic.neutrino import exceptions
-from tachyonic.neutrino import constants as const
+from tachyonic.client import constants as const
 
 log = logging.getLogger(__name__)
 
 
-class Error(exceptions.RestClientError):
+class Error(Exception):
     def __init__(self, description):
         Exception.__init__(self, description)
         self.description = description
@@ -20,21 +19,21 @@ class Error(exceptions.RestClientError):
         return str(self.description)
 
 
-class ClientError(Error):
+class RestClientError(Error):
+    def __init__(self, description):
+        Error.__init__(self, description)
+        self.description = description
+
+    def __str__(self):
+        return str(self.description)
+
+
+class ClientError(RestClientError):
     def __init__(self, title, description, status=const.HTTP_500):
-        Exception.__init__(self, description)
+        RestClientError.__init__(self, description)
         self.title = title
         self.description = description
         self.status = status
-
-    def __str__(self):
-        return str(self.description)
-
-
-class Authentication(Error):
-    def __init__(self, description):
-        Exception.__init__(self, description)
-        self.description = description
 
     def __str__(self):
         return str(self.description)
