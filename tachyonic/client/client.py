@@ -115,13 +115,13 @@ class Client(RestClient):
                         m[field] = obj._data[field]._data
                 data = json.dumps(m)
             # DETECT IF REQUEST POST
-            elif hasattr(field, 'value'):
+            elif hasattr(obj, 'value'):
                 m = {}
                 for field in obj:
                     m[field] = obj[field].value
                 data = json.dumps(m)
             else:
-                data = json.dumps(m)
+                data = json.dumps(obj)
         else:
             data = None
 
