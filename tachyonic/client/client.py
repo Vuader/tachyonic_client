@@ -5,34 +5,19 @@ import logging
 import thread
 import json
 
-try:
-    # python 3
-    from io import BytesIO
-except ImportError:
-    # python 2
-    from StringIO import StringIO as BytesIO
-try:
-    # python 3
-    from urllib.parse import urlencode
-except ImportError:
-    # python 2
-    from urllib import urlencode
-
-from tachyonic.neutrino.restclient import RestClient as NfwRestClient
-from tachyonic.neutrino import model as nfw_model
-from tachyonic.neutrino import request as nfw_request
-from tachyonic.neutrino import constants as const
-
-from tachyonic.common import exceptions
+from tachyonic.client.restclient import RestClient
+from tachyonic.client import constants as const
+from tachyonic.client import exceptions
 
 log = logging.getLogger(__name__)
 
 sessions = {}
 
-class Client(NfwRestClient):
-    def __init__(self, url, token=None):
+class Client(RestClient):
+    def __init__(self, url):
         global sessions
 
+        self._endpoints = {}
         self.thread_id = thread.get_ident()
         if self.thread_id not in sessions:
             sessions[self.thread_id] = {}
@@ -42,16 +27,26 @@ class Client(NfwRestClient):
 
         if url in self.session:
             self.tachyonic_headers = self.session[url]['headers']
+            self._endpoints = self.session[url]['endpoints']
             super(Client, self).__init__()
         else:
             self.session[url] = {}
             self.session[url]['headers'] = {}
+            self.session[url]['endpoints'] = {}
             super(Client, self).__init__()
             self.tachyonic_headers = self.session[url]['headers']
+            self._endpoints = self.session[url]['endpoints']
+
+    def endpoints(self):
+        url = self.url
+        url = "%s" % (url,)
+        server_headers, result = self.execute("GET", url)
+        self.session[self.url]['endpoints'] = result['external']
+        return self._endpoints
 
     def authenticate(self, username, password, domain):
         url = self.url
-        auth_url = "%s/token" % (url,)
+        auth_url = "%s/v1/token" % (url,)
 
         if 'X-Tenant' in self.tachyonic_headers:
             del self.tachyonic_headers['X-Tenant']
@@ -68,18 +63,16 @@ class Client(NfwRestClient):
                                               data, self.tachyonic_headers)
 
         if 'token' in result:
-            self.token = result['token']
-            self.tachyonic_headers['X-Auth-Token'] = self.token
-        #else:
-        #    raise tachyonic.common.exceptions.Authentication("Could not connect/authenticate")
+            self._token = result['token']
+            self.tachyonic_headers['X-Auth-Token'] = self._token
 
         self.session[url]['headers'] = self.tachyonic_headers
-
+        self.endpoints()
         return result
 
     def token(self, token, domain, tenant):
         url = self.url
-        auth_url = "%s/token" % (url,)
+        auth_url = "%s/v1/token" % (url,)
 
         if tenant is not None:
             self.tachyonic_headers['X-Tenant'] = tenant
@@ -98,10 +91,9 @@ class Client(NfwRestClient):
                 del self.tachyonic_headers['X-Domain']
             if 'X-Auth-Token' in self.tachyonic_headers:
                 del self.tachyonic_headers['X-Auth-Token']
-            #raise tachyonic.common.exceptions.Authentication("Could not connect/authenticate")
 
         self.session[url]['headers'] = self.tachyonic_headers
-
+        self.endpoints()
         return result
 
     def domain(self, domain):
@@ -113,15 +105,18 @@ class Client(NfwRestClient):
         else:
             self.tachyonic_headers['X-Tenant'] = tenant
 
-    def execute(self, request, url, obj=None, headers=None):
+    def execute(self, request, url, obj=None, headers=None, endpoint=None):
         if obj is not None:
-            if isinstance(obj, nfw_model.ModelDict):
+            # DETECT IF ORM
+            if hasattr(obj, 'Meta'):
                 m = {}
                 for field in obj._declared_fields:
                     if field in obj._data:
                         m[field] = obj._data[field]._data
                 data = json.dumps(m)
-            elif isinstance(obj, nfw_request.Post):
+            # DETECT IF REQUEST POST
+            elif hasattr(obj, 'value'):
+                m = {}
                 for field in obj:
                     m[field] = obj[field].value
                 data = json.dumps(m)
@@ -130,8 +125,20 @@ class Client(NfwRestClient):
         else:
             data = None
 
-        if self.url not in url:
-            url = "%s/%s" % (self.url, url)
+        if endpoint is not None:
+            if endpoint in self._endpoints:
+                url = "%s/%s" % (self._endpoints[endpoint], url)
+            else:
+                http_status = const.HTTP_500
+                title = "RESTAPI"
+                desc = "Endpoint not found %s" % (endpoint,)
+                raise exceptions.ClientError(title,
+                                             desc,
+                                             http_status)
+        else:
+            if self.url not in url:
+                url = "%s/%s" % (self.url, url)
+
         if headers is None:
             headers = self.tachyonic_headers
         else:
@@ -149,7 +156,7 @@ class Client(NfwRestClient):
                             if hasattr(const, f):
                                 http_status = getattr(const, f)
                             else:
-                                http_status = const.neutrino.HTTP_500
+                                http_status = const.HTTP_500
 
                             title = "RESTAPI: %s" % (response['title'],)
                             raise exceptions.ClientError(title,
