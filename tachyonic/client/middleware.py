@@ -48,7 +48,7 @@ class Token(object):
             if self.interface == 'ui' and req.post.get('tenant', None) is not None:
                 tenant = req.post.get('tenant', None)
             elif self.interface == 'ui' and 'tenant' in req.session:
-                tenant = req.session.get('tenant')[0]
+                tenant = req.session.get('tenant')
             else:
                 tenant = req.headers.get('X-Tenant')
 
