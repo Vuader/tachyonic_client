@@ -11,6 +11,7 @@ log = logging.getLogger(__name__)
 
 class Token(object):
     def pre(self, req, resp):
+        resp.headers['content-type'] = 'application/json; charset=UTF-8'.encode('utf-8')
         req.context['token'] = None
         req.context['email'] = None
         req.context['username'] = None
@@ -76,4 +77,4 @@ class Token(object):
                     req.context['tenant'] = r['tenant_name']
 
         if hasattr(self, 'init'):
-            self.init(req)
+            self.init(req, resp)
