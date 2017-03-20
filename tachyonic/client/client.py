@@ -17,7 +17,6 @@ class Client(RestClient):
     def __init__(self, url):
         global sessions
 
-        self._endpoints = {}
         self.thread_id = thread.get_ident()
         if self.thread_id not in sessions:
             sessions[self.thread_id] = {}
@@ -39,9 +38,9 @@ class Client(RestClient):
 
     def endpoints(self):
         url = self.url
-        url = "%s" % (url,)
         server_headers, result = self.execute("GET", url)
         self.session[self.url]['endpoints'] = result['external']
+        log.error(self._endpoints)
         return self._endpoints
 
     def authenticate(self, username, password, domain):

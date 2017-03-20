@@ -42,13 +42,13 @@ class Token(object):
             elif self.interface == 'ui' and 'domain' in req.session:
                 domain = req.session.get('domain', 'default')
             else:
-            	domain = req.headers.get('X-Domain', [ 'default' ])[0]
+                domain = req.headers.get('X-Domain', 'default')
 
             # Get Tenant
             if self.interface == 'ui' and req.post.get('tenant', None) is not None:
                 tenant = req.post.get('tenant', None)
             elif self.interface == 'ui' and 'tenant' in req.session:
-                tenant = req.session.get('tenant')[0]
+                tenant = req.session.get('tenant')
             else:
             	tenant = req.headers.get('X-Tenant')
 
