@@ -19,6 +19,8 @@ class Client(RestClient):
     def __init__(self, url):
         global sessions
 
+        self._endpoints = {}
+
         self.thread_id = thread.get_ident()
         if self.thread_id not in sessions:
             sessions[self.thread_id] = {}
@@ -26,23 +28,22 @@ class Client(RestClient):
 
         self.url = url
 
+
         if url in self.session:
             self.tachyonic_headers = self.session[url]['headers']
-            self._endpoints = self.session[url]['endpoints']
             super(Client, self).__init__()
         else:
             self.session[url] = {}
             self.session[url]['headers'] = {}
-            self.session[url]['endpoints'] = {}
             super(Client, self).__init__()
             self.tachyonic_headers = self.session[url]['headers']
-            self._endpoints = self.session[url]['endpoints']
+
+        self.endpoints()
 
     def endpoints(self):
         url = self.url
         server_headers, result = self.execute("GET", url)
-        self.session[self.url]['endpoints'] = result['external']
-        log.error(self._endpoints)
+        self._endpoints = result['external']
         return self._endpoints
 
     def authenticate(self, username, password, domain):
@@ -68,7 +69,6 @@ class Client(RestClient):
             self.tachyonic_headers['X-Auth-Token'] = self._token
 
         self.session[url]['headers'] = self.tachyonic_headers
-        self.endpoints()
         return result
 
     def token(self, token, domain, tenant):
@@ -94,7 +94,6 @@ class Client(RestClient):
                 del self.tachyonic_headers['X-Auth-Token']
 
         self.session[url]['headers'] = self.tachyonic_headers
-        self.endpoints()
         return result
 
     def domain(self, domain):
