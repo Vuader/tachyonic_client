@@ -5,6 +5,8 @@ import logging
 import thread
 import json
 
+import pycurl
+
 from tachyonic.client.restclient import RestClient
 from tachyonic.client import constants as const
 from tachyonic.client import exceptions
@@ -143,7 +145,13 @@ class Client(RestClient):
         else:
             headers.update(self.tachyonic_headers)
 
-        status, server_headers, response = super(Client, self).execute(request, url, data, headers)
+        try:
+            status, server_headers, response = super(Client, self).execute(request, url, data, headers)
+        except pycurl.error as e:
+            raise exceptions.ClientError('RESTAPI CONNECT ERROR',
+                                          e,
+                                          const.HTTP_500)
+
         if status != 200:
             if 'content-type' in server_headers:
                 if 'json' in server_headers['content-type']:
