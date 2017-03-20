@@ -76,7 +76,6 @@ class Client(RestClient):
         if tenant is not None:
             self.tachyonic_headers['X-Tenant'] = tenant
         self.tachyonic_headers['X-Domain'] = domain
-        print("FUCKING DOMAIN %s" % domain)
         self.tachyonic_headers['X-Auth-Token'] = token
 
         server_headers, result = self.execute("GET", auth_url,
