@@ -128,7 +128,7 @@ class Client(RestClient):
             if endpoint in self._endpoints:
                 url = "%s/%s" % (self._endpoints[endpoint], url)
             else:
-                http_status = const.HTTP_500
+                http_status = const.HTTP_404
                 title = "RESTAPI"
                 desc = "Endpoint not found %s" % (endpoint,)
                 raise exceptions.ClientError(title,
