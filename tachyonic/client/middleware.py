@@ -10,6 +10,9 @@ log = logging.getLogger(__name__)
 
 
 class Token(object):
+    def __init__(self, interface='ui'):
+        self.interface = interface
+
     def pre(self, req, resp):
         resp.headers['content-type'] = 'application/json; charset=UTF-8'.encode('utf-8')
         req.context['token'] = None
@@ -33,19 +36,18 @@ class Token(object):
         req.context['restapi'] = app.config.get("tachyon").get("restapi","http://127.0.0.1")
         if token is not None:
             api = Client(req.context['restapi'])
-
             # Get Domain
-            if req.post.get('domain', None) is not None:
+            if self.interface == 'ui' and req.post.get('domain', None) is not None:
                 domain = req.post.get('X-domain', 'default')
-            elif 'domain' in req.session:
+            elif self.interface == 'ui' and 'domain' in req.session:
                 domain = req.session.get('domain', 'default')
             else:
-                domain = req.headers.get('X-Domain', [ 'default' ])[0]
+                domain = req.headers.get('X-Domain', 'default')
 
             # Get Tenant
-            if req.post.get('tenant', None) is not None:
+            if self.interface == 'ui' and req.post.get('tenant', None) is not None:
                 tenant = req.post.get('tenant', None)
-            elif 'tenant' in req.session:
+            elif self.interface == 'ui' and 'tenant' in req.session:
                 tenant = req.session.get('tenant')[0]
             else:
                 tenant = req.headers.get('X-Tenant')
