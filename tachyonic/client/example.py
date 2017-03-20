@@ -25,6 +25,7 @@ api = Client('http://dev/api')
 headers, response = api.execute(const.HTTP_GET,'/v1/token')
 print response
 api = Users('http://dev/api')
+api.execute(const.HTTP_GET, '/blah/blah/get/me/this/network', endpoint='netrino')
 print api.list_users()
 print api._endpoints
 
