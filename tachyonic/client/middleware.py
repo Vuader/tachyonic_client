@@ -50,7 +50,7 @@ class Token(object):
             elif self.interface == 'ui' and 'tenant' in req.session:
                 tenant = req.session.get('tenant')[0]
             else:
-                tenant = req.headers.get('X-Tenant')
+            	tenant = req.headers.get('X-Tenant')
 
             # Validate against API and get details...
             auth = api.token(token, domain, tenant)
