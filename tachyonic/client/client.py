@@ -10,6 +10,7 @@ import pycurl
 from tachyonic.client.restclient import RestClient
 from tachyonic.client import constants as const
 from tachyonic.client import exceptions
+from tachyonic.client.utils import clean_url
 
 log = logging.getLogger(__name__)
 
@@ -42,9 +43,24 @@ class Client(RestClient):
 
     def endpoints(self):
         url = self.url
-        server_headers, result = self.execute("GET", url)
-        self._endpoints = result['external']
-        return self._endpoints
+        try:
+            server_status, server_headers, server_response = super(Client,
+                                                                   self).execute(const.HTTP_GET,
+                                                                                 url,
+                                                                                 None,
+                                                                                 [])
+        except Exception as e:
+            raise exceptions.ClientError('RESTAPI Retrieve Endpoints',
+                                          e,
+                                          const.HTTP_500)
+        try:
+            response = json.loads(server_response)
+            self._endpoints = response['external']
+            return self._endpoints
+        except Exception as e:
+            raise exceptions.ClientError('RESTAPI JSON Decode',
+                                          e,
+                                          const.HTTP_500)
 
     def authenticate(self, username, password, domain):
         url = self.url
@@ -115,10 +131,10 @@ class Client(RestClient):
                         m[field] = obj._data[field]._data
                 data = json.dumps(m)
             # DETECT IF REQUEST POST
-            elif hasattr(obj, 'value'):
+            elif hasattr(obj, '_detected_post'):
                 m = {}
                 for field in obj:
-                    m[field] = obj[field].value
+                    m[field] = obj.get(field)
                 data = json.dumps(m)
             else:
                 data = json.dumps(obj)
@@ -138,6 +154,8 @@ class Client(RestClient):
         else:
             if self.url not in url:
                 url = "%s/%s" % (self.url, url)
+        url = clean_url(url)
+
 
         if headers is None:
             headers = self.tachyonic_headers

@@ -3,7 +3,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import urlparse
 import sys
+import re
+
+
+def clean_url(url):
+    parsed = list(urlparse.urlparse(url))
+    parsed[2] = re.sub("/{2,}", "/", parsed[2]) # replace two or more / with one
+    cleaned = urlparse.urlunparse(parsed)
+    return cleaned
 
 
 def if_unicode_to_utf8(string):
