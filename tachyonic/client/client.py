@@ -32,14 +32,29 @@ class Client(RestClient):
 
         if url in self.session:
             self.tachyonic_headers = self.session[url]['headers']
+            self._endpoints = self.session[url]['endpoints']
             super(Client, self).__init__()
         else:
             self.session[url] = {}
             self.session[url]['headers'] = {}
             super(Client, self).__init__()
             self.tachyonic_headers = self.session[url]['headers']
+            self.tachyonic_headers = self.session[url]['endpoints'] = self.endpoints()
+            self._endpoints = self.tachyonic_headers = self.session[url]['endpoints']
 
-        self.endpoints()
+    def _check_headers(self, server_headers, url):
+        e = "Server not responding with JSON Content-Type %s" % url
+        if 'content-type' in server_headers:
+            if 'json' in server_headers['content-type'].lower():
+                return True
+            else:
+                raise exceptions.ClientError('RESTAPI',
+                                              e,
+                                              const.HTTP_500)
+        else:
+            raise exceptions.ClientError('RESTAPI',
+                                          e,
+                                          const.HTTP_500)
 
     def endpoints(self):
         url = self.url
@@ -49,6 +64,7 @@ class Client(RestClient):
                                                                                  url,
                                                                                  None,
                                                                                  [])
+            self._check_headers(server_headers, url)
         except Exception as e:
             raise exceptions.ClientError('RESTAPI Retrieve Endpoints',
                                           e,
@@ -164,6 +180,7 @@ class Client(RestClient):
 
         try:
             status, server_headers, response = super(Client, self).execute(request, url, data, headers)
+            self._check_headers(server_headers, url)
         except pycurl.error as e:
             raise exceptions.ClientError('RESTAPI CONNECT ERROR',
                                           e,
