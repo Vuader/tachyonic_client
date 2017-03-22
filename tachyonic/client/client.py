@@ -103,12 +103,12 @@ class Client(RestClient):
         self.session[url]['headers'] = self.tachyonic_headers
         return result
 
-    def token(self, token, domain, tenant):
+    def token(self, token, domain, tenant_id):
         url = self.url
         auth_url = "%s/v1/token" % (url,)
 
-        if tenant is not None:
-            self.tachyonic_headers['X-Tenant'] = tenant
+        if tenant_id is not None:
+            self.tachyonic_headers['X-Tenant-Id'] = tenant_id
         self.tachyonic_headers['X-Domain'] = domain
         self.tachyonic_headers['X-Auth-Token'] = token
 
@@ -119,7 +119,7 @@ class Client(RestClient):
             self.token = token
         else:
             if 'X-Tenant' in self.tachyonic_headers:
-                del self.tachyonic_headers['X-Tenant']
+                del self.tachyonic_headers['X-Tenant-Id']
             if 'X-Domain' in self.tachyonic_headers:
                 del self.tachyonic_headers['X-Domain']
             if 'X-Auth-Token' in self.tachyonic_headers:
@@ -133,9 +133,9 @@ class Client(RestClient):
 
     def tenant(self, tenant):
         if tenant is None:
-            del self.tachyonic_headers['X-Tenant']
+            del self.tachyonic_headers['X-Tenant-Id']
         else:
-            self.tachyonic_headers['X-Tenant'] = tenant
+            self.tachyonic_headers['X-Tenant-Id'] = tenant
 
     def execute(self, request, url, obj=None, headers=None, endpoint=None):
         if obj is not None:
